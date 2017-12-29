@@ -1,0 +1,24 @@
+NameVirtualHost *:80
+
+<VirtualHost *:80>
+	DocumentRoot /home/{{app_user}}/www
+	ErrorLog /home/{{app_user}}/logs/error_log
+	CustomLog /home/{{app_user}}/logs/access_log common
+
+	<Directory /home/{{app_user}}/www>
+		Require all granted
+		AllowOverride all
+	</Directory>
+	SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+
+	<FilesMatch ".+\.ph(p[3457]?|t|tml)$">
+		SetHandler "proxy:unix:/run/php/app-php7.0-fpm.sock|fcgi://localhost"
+	</FilesMatch>
+	<FilesMatch ".+\.phps$">
+        	Require all denied
+	</FilesMatch>
+	<FilesMatch "^\.ph(p[3457]?|t|tml|ps)$">
+        	Require all denied
+	</FilesMatch>
+
+</VirtualHost>

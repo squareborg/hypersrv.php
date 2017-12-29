@@ -1,0 +1,83 @@
+---
+# tasks file for hypersrv.php
+
+- name: install required packages
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+    - apache2
+    - php7.0
+    - php7.0-bcmath
+    - php7.0-cli
+    - php7.0-common
+    - php7.0-curl
+    - php7.0-fpm
+    - php7.0-gd
+    - php7.0-gmp
+    - php7.0-intl
+    - php7.0-json
+    - php7.0-mbstring
+    - php7.0-mcrypt
+    - php7.0-mysql
+    - php7.0-xml
+    - php7.0-xmlrpc
+    - php7.0-xsl
+
+- name: create linux user for php app
+  user:
+    name: "{{app_user}}"
+
+- name: create app folders
+  file:
+    path: /home/{{app_user}}/{{item}}
+    state: directory
+    owner: "{{app_user}}"
+    group: "{{app_user}}"
+  with_items:
+    - www
+    - logs
+    - util
+
+- name: create apache config
+  template:
+    src: apache_app.conf.j2
+    dest: /etc/apache2/sites-available/app.conf
+  notify: reload apache
+
+- name: create php pool
+  template:
+    src: php_app_pool.conf.j2
+    dest: /etc/php/7.0/fpm/pool.d/app.conf
+  notify: reload php
+
+- name: remove default www pool
+  file:
+    path: /etc/php/7.0/fpm/pool.d/www.conf
+    state: absent
+
+- name: disable default site
+  command: a2dissite 000-default
+  notify: reload apache
+
+- name: enable site
+  command: a2ensite app
+  notify: reload apache
+
+- name: apache enable mods
+  command: a2enmod {{item}}
+  with_items:
+    - proxy
+    - proxy_fcgi
+    - rewrite
+  notify: reload apache
+
+- name: enable php conf
+  command: a2enconf php7.0-fpm
+  notify: reload apache
+
+- name: enable apache and runing
+  service:
+    name: apache2
+    state: started
+    enabled: yes

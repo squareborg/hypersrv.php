@@ -1,0 +1,12 @@
+---
+# handlers file for hypersrv.php
+
+- name: reload apache
+  service:
+    name: apache2
+    state: restarted
+
+- name: reload php
+  service:
+    name: php7.0-fpm
+    state: restarted
